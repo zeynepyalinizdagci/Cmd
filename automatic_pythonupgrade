@@ -1,0 +1,62 @@
+import os
+import subprocess
+import winreg
+
+def create_environment():
+    conda_env_file = "environment.yml"
+    os.system(f"conda env create -f {conda_env_file}")
+
+def activate_environment(env_name):
+    activate_command = f"conda activate {env_name}"
+    subprocess.run(activate_command, shell=True)
+
+def install_packages(requirements_file):
+    os.system(f"conda install --file {requirements_file}")
+
+def update_registry(registry_key, python_path):
+    try:
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, registry_key, 0, winreg.KEY_SET_VALUE)
+        winreg.SetValue(key, None, winreg.REG_SZ, python_path)
+        winreg.CloseKey(key)
+        print(f"Registry key '{registry_key}' updated successfully.")
+    except Exception as e:
+        print(f"Error updating registry: {e}")
+        rollback(registry_key)
+
+def rollback(registry_key):
+    try:
+        winreg.DeleteKey(winreg.HKEY_LOCAL_MACHINE, registry_key)
+        print(f"Rollback successful. Registry key '{registry_key}' deleted.")
+    except Exception as e:
+        print(f"Error during rollback: {e}")
+
+def delete_environment(env_name):
+    os.system(f"conda env remove --name {env_name} --all")
+
+# Step 1: Create Conda environment from .yml file
+env_name = "your_env_name"  # Replace with your environment name
+try:
+    create_environment()
+
+    # Verify if the environment was created
+    env_exists = subprocess.run(f"conda info --envs | findstr {env_name}", shell=True, text=True, capture_output=True)
+
+    if env_exists.returncode == 0:
+        print(f"Environment '{env_name}' was created successfully.")
+        # Step 2: Activate the created environment
+        activate_environment(env_name)
+        # Step 3: Install required packages from .txt file
+        requirements_file = "requirements.txt"
+        install_packages(requirements_file)
+        # Step 4: Update Registry Editor
+        registry_key = "Software\\pythoncore\\python\\3.7\\installedpath"
+        python_path = r"C:\path\to\python37\python.exe"  # Replace with your Python 3.7 path
+        update_registry(registry_key, python_path)
+    else:
+        print(f"Failed to create environment '{env_name}'. Please check your environment file.")
+        delete_environment(env_name)
+except Exception as e:
+    print(f"Error occurred: {e}")
+    # Rollback in case of an error
+    rollback("Software\\pythoncore\\python\\3.7\\installedpath")
+    delete_environment(env_name)
