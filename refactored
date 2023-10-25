@@ -9,8 +9,11 @@ def get_directories_sorted_by_mtime(base_path):
 def should_keep_directory(directory, num_to_keep):
     return int(directory) >= num_to_keep
 
-def has_special_file(directory_path):
-    return any(file in os.listdir(directory_path) for file in ['releases.txt', 'alphas.txt'])
+def is_release(directory_path):
+    return any(file in os.listdir(directory_path) for file in ['releases.txt'])
+
+def is_alpha(directory_path):
+    return any(file in os.listdir(directory_path) for file in ['alphas.txt'])
 
 def delete_directory(directory_path):
     shutil.rmtree(directory_path)
@@ -22,10 +25,10 @@ def clean_directories(base_path, num_to_keep):
     for directory in directories:
         directory_path = os.path.join(base_path, directory)
 
-        if should_keep_directory(directory, num_to_keep):
+        if should_keep_directory(directory, num_to_keep) or is_release(directory):
             continue
 
-        if has_special_file(directory_path):
+        if is_alpha(directory_path):
             delete_directory(directory_path)
 
 # Example usage:
