@@ -1,0 +1,35 @@
+import os
+import shutil
+
+def get_directories_sorted_by_mtime(base_path):
+    directories = [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]
+    directories.sort(key=lambda x: os.path.getmtime(os.path.join(base_path, x)))
+    return directories
+
+def should_keep_directory(directory, num_to_keep):
+    return int(directory) >= num_to_keep
+
+def has_special_file(directory_path):
+    return any(file in os.listdir(directory_path) for file in ['releases.txt', 'alphas.txt'])
+
+def delete_directory(directory_path):
+    shutil.rmtree(directory_path)
+    print(f'Deleted: {directory_path}')
+
+def clean_directories(base_path, num_to_keep):
+    directories = get_directories_sorted_by_mtime(base_path)
+
+    for directory in directories:
+        directory_path = os.path.join(base_path, directory)
+
+        if should_keep_directory(directory, num_to_keep):
+            continue
+
+        if has_special_file(directory_path):
+            delete_directory(directory_path)
+
+# Example usage:
+base_path = '/path/to/your/directory'
+num_to_keep = 50
+
+clean_directories(base_path, num_to_keep)
